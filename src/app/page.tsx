@@ -6,6 +6,16 @@ import { AiSchedulerDialog } from '@/components/verdant/AiSchedulerDialog';
 import { Header } from '@/components/verdant/Header';
 import { TaskList } from '@/components/verdant/TaskList';
 import type { Task } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const initialTasks: Task[] = [
   { id: '1', title: 'Morning Stand-up', startTime: '09:00', endTime: '09:15', completed: true },
@@ -18,6 +28,7 @@ export default function Home() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
   const [isAiSchedulerOpen, setAiSchedulerOpen] = useState(false);
+  const [isClearAllDialogOpen, setClearAllDialogOpen] = useState(false);
 
   const handleAddTask = (taskData: Omit<Task, 'id' | 'completed'>) => {
     const newTask: Task = {
@@ -34,12 +45,19 @@ export default function Home() {
     );
   };
 
+  const handleClearAll = () => {
+    setTasks([]);
+    setClearAllDialogOpen(false);
+  };
+
   return (
     <div className="flex justify-center min-h-screen">
       <div className="w-full max-w-3xl bg-card">
         <Header 
           onAddTask={() => setAddTaskOpen(true)}
           onAiSchedule={() => setAiSchedulerOpen(true)}
+          onClearAll={() => setClearAllDialogOpen(true)}
+          hasTasks={tasks.length > 0}
         />
         <main className="p-4 md:p-6">
           <TaskList tasks={tasks} onToggleComplete={handleToggleComplete} />
@@ -57,6 +75,22 @@ export default function Home() {
           onAddTask={handleAddTask}
           tasks={tasks}
         />
+
+        <AlertDialog open={isClearAllDialogOpen} onOpenChange={setClearAllDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete all of your tasks.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearAll}>Clear All</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </div>
     </div>
   );
