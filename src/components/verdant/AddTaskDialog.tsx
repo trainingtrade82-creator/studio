@@ -67,29 +67,29 @@ export const AddTaskDialog: FC<AddTaskDialogProps> = ({ isOpen, onOpenChange, on
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} id="add-task-form">
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
+            <div className="grid grid-cols-1 md:grid-cols-4 items-start md:items-center gap-2 md:gap-4">
+              <Label htmlFor="title" className="md:text-right">
                 Task
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-3 w-full">
                 <Input id="title" {...register('title')} />
                 {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="startTime" className="text-right">
+            <div className="grid grid-cols-1 md:grid-cols-4 items-start md:items-center gap-2 md:gap-4">
+              <Label htmlFor="startTime" className="md:text-right">
                 Start Time
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-3 w-full">
                 <Input id="startTime" type="time" {...register('startTime')} />
                 {errors.startTime && <p className="text-sm text-destructive mt-1">{errors.startTime.message}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="endTime" className="text-right">
+            <div className="grid grid-cols-1 md:grid-cols-4 items-start md:items-center gap-2 md:gap-4">
+              <Label htmlFor="endTime" className="md:text-right">
                 End Time
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-3 w-full">
                 <Input id="endTime" type="time" {...register('endTime')} />
                 {errors.endTime && <p className="text-sm text-destructive mt-1">{errors.endTime.message}</p>}
               </div>
