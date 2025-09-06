@@ -4,13 +4,25 @@ import type { FC } from 'react';
 import { TaskItem } from './TaskItem';
 import type { Task } from '@/lib/types';
 import { CalendarCheck2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type TaskListProps = {
   tasks: Task[];
   onToggleComplete: (id: string, completed: boolean) => void;
+  isLoading: boolean;
 };
 
-export const TaskList: FC<TaskListProps> = ({ tasks, onToggleComplete }) => {
+export const TaskList: FC<TaskListProps> = ({ tasks, onToggleComplete, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="space-y-4 pt-4">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
+    );
+  }
+
   if (tasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center p-10 border-2 border-dashed rounded-lg mt-8">

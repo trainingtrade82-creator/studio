@@ -1,6 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDocs } from 'firebase/firestore';
+
 import { AddTaskDialog } from '@/components/verdant/AddTaskDialog';
 import { AiSchedulerDialog } from '@/components/verdant/AiSchedulerDialog';
 import { Header } from '@/components/verdant/Header';
@@ -16,51 +21,95 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-const initialTasks: Task[] = [
-  { id: '1', title: 'Morning Stand-up', startTime: '09:00', endTime: '09:15', completed: true },
-  { id: '2', title: 'Work on feature #123', startTime: '09:30', endTime: '11:30', completed: false },
-  { id: '3', title: 'Lunch Break', startTime: '12:00', endTime: '13:00', completed: false },
-  { id: '4', title: 'Team Meeting', startTime: '14:00', endTime: '15:00', completed: false },
-];
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
   const [isAiSchedulerOpen, setAiSchedulerOpen] = useState(false);
   const [isClearAllDialogOpen, setClearAllDialogOpen] = useState(false);
 
-  const handleAddTask = (taskData: Omit<Task, 'id' | 'completed'>) => {
-    const newTask: Task = {
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    if (user) {
+      setIsDataLoading(true);
+      const tasksCollectionRef = collection(db, 'users', user.uid, 'tasks');
+      const unsubscribe = onSnapshot(tasksCollectionRef, (snapshot) => {
+        const tasksData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Task[];
+        setTasks(tasksData);
+        setIsDataLoading(false);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  const handleAddTask = async (taskData: Omit<Task, 'id' | 'completed'>) => {
+    if (!user) return;
+    const newTask = {
       ...taskData,
-      id: crypto.randomUUID(),
       completed: false,
     };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
+    await addDoc(collection(db, 'users', user.uid, 'tasks'), newTask);
   };
 
-  const handleToggleComplete = (id: string, completed: boolean) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => (task.id === id ? { ...task, completed } : task))
-    );
+  const handleToggleComplete = async (id: string, completed: boolean) => {
+    if (!user) return;
+    const taskDocRef = doc(db, 'users', user.uid, 'tasks', id);
+    await updateDoc(taskDocRef, { completed });
   };
 
-  const handleClearAll = () => {
-    setTasks([]);
+  const handleClearAll = async () => {
+    if (!user) return;
+    const tasksCollectionRef = collection(db, 'users', user.uid, 'tasks');
+    const q = query(tasksCollectionRef);
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach(async (docSnapshot) => {
+      await deleteDoc(doc(db, 'users', user.uid, 'tasks', docSnapshot.id));
+    });
     setClearAllDialogOpen(false);
   };
+
+  if (loading || !user) {
+    return (
+      <div className="flex justify-center min-h-screen">
+        <div className="w-full max-w-3xl bg-card">
+          <header className="flex items-center justify-between p-4 border-b flex-wrap gap-4">
+            <Skeleton className="h-8 w-40" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-24" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+          </header>
+          <main className="p-4 md:p-6 space-y-4 pt-4">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center min-h-screen">
       <div className="w-full max-w-3xl bg-card">
-        <Header 
+        <Header
+          user={user}
           onAddTask={() => setAddTaskOpen(true)}
           onAiSchedule={() => setAiSchedulerOpen(true)}
           onClearAll={() => setClearAllDialogOpen(true)}
           hasTasks={tasks.length > 0}
         />
         <main className="p-4 md:p-6">
-          <TaskList tasks={tasks} onToggleComplete={handleToggleComplete} />
+          <TaskList tasks={tasks} onToggleComplete={handleToggleComplete} isLoading={isDataLoading} />
         </main>
         
         <AddTaskDialog 
